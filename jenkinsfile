@@ -1,5 +1,26 @@
 pipeline {
     agent any
+    agent {
+        kubernetes {
+            label 'maven-agent'
+            defaultContainer 'jnlp'
+            yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: maven
+    image: maven:3.9.4-openjdk-17
+    command:
+      - cat
+    tty: true
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+"""
+        }
+    }
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
@@ -29,6 +50,22 @@ pipeline {
 
         stage('Docker Push') {
             steps {
+
+            steps {
+                container('maven') {
+                    sh 'mvn clean package'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t jallisivasri703/demoapp:latest demoapp'
+            }
+        }
+
+        stage('Docker Push') {
+            steps {
                 sh '''
                   echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
                   docker push jallisivasri703/demoapp:latest
@@ -39,7 +76,9 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh 'kubectl apply -f demoapp/K8s/'
+                sh 'kubectl apply -f K8s/'
             }
         }
     }
 }
+
