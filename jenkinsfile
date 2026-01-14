@@ -1,5 +1,4 @@
 pipeline {
-    agent any
     agent {
         kubernetes {
             label 'maven-agent'
@@ -38,20 +37,6 @@ spec:
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
-            }
-        }
-
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t jallisivasri703/demoapp:latest demoapp'
-            }
-        }
-
-        stage('Docker Push') {
-            steps {
-
-            steps {
                 container('maven') {
                     sh 'mvn clean package'
                 }
@@ -75,10 +60,8 @@ spec:
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f demoapp/K8s/'
                 sh 'kubectl apply -f K8s/'
             }
         }
     }
 }
-
