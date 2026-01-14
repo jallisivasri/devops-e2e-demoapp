@@ -1,62 +1,44 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'maven'
-    }
-
     environment {
-        IMAGE_NAME = "jallisivasri703/demoapp"
-        IMAGE_TAG  = "latest"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
     }
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/jallisivasri/devops-e2e-demoapp.git'
+                    url: 'https://github.com/jallisivasri/devops-e2e-demoapp.git',
+                    credentialsId: 'github-creds'
             }
         }
 
-        stage('Build Maven App') {
+        stage('Build') {
+            steps {
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t jallisivasri703/demoapp:latest demoapp'
+            }
+        }
+
+        stage('Docker Push') {
             steps {
                 sh '''
-                cd demoapp
-                mvn clean package -DskipTests
+                  echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                  docker push jallisivasri703/demoapp:latest
                 '''
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh '''
-                cd demoapp
-                docker build -t $IMAGE_NAME:$IMAGE_TAG .
-                '''
-            }
-        }
-
-        stage('Push Image to DockerHub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh '''
-                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    docker push $IMAGE_NAME:$IMAGE_TAG
-                    '''
-                }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                kubectl apply -f demoapp/K8s/
-                '''
+                sh 'kubectl apply -f demoapp/K8s/'
             }
         }
     }
