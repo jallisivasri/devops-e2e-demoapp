@@ -14,10 +14,11 @@ pipeline {
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Docker Build') {
             steps {
-                sh 'docker build -t demoapp:1.0 .'
+                sh 'docker build -t demoapp:latest .'
             }
         }
     }
 }
+   
