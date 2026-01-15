@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "yourdockerhubuser/demoapp"
+        DOCKER_IMAGE = "jallisivasri703/demoapp"
     }
 
     stages {
