@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "jallisivasri703/demoapp"
+        DOCKER_IMAGE = "yourdockerhubuser/demoapp"
     }
 
     stages {
@@ -42,7 +42,12 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                bat 'kubectl apply -f k8s/'
+            }
+        }
     }
 }
-
 
